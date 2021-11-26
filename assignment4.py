@@ -1,5 +1,6 @@
 import random
 
+import numpy
 import numpy as np
 import math
 
@@ -102,13 +103,37 @@ class K_MEANS:
 		diffs = (centroids - datapoint)**2
 		return np.sqrt(diffs.sum(axis=1))
 
+	def mean(self, cluster):
+		newcentroid = []
+		for i in range(cluster.shape[1]):
+			column = cluster[:, i]
+			newcentroid.append(np.mean(column))
+		return newcentroid
+
 	def train(self, X):
 		#training logic here
 		#input is array of features (no labels)
-		centroids = []
 
+		# Finding k random centroids using the input data
+		randompoints = random.sample(list(range(X.shape[1])), self.k)
+		centroids = np.array(X[randompoints])
 
-		return self.cluster
+		# Updating the k random centroids for t number of iterations
+		clusterids = []
+		for _ in range(self.t):
+			clusterids = []
+			for i in range(X.shape[0]):
+				index: int = i
+				distances = self.distance(centroids, X[index])
+				clusterids.append(np.argmin(distances))
+
+			for i in range(self.k):
+				clustermembers = [j for j in range(X.shape[0]) if clusterids[j] == i]
+				datapoints = X[clustermembers]
+				newcentroid = self.mean(datapoints)
+				centroids[i] = newcentroid
+
+		return np.array(clusterids)
 		#return array with cluster id corresponding to each item in dataset
 
 
