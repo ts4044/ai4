@@ -86,11 +86,11 @@ w1 = np.random.normal(0, .1, size=(X_train.shape[1], 10))
 w2 = np.random.normal(0, .1, size=(10,1))
 b1 = np.random.normal(0, .1, size=(1,10))
 b2 = np.random.normal(0, .1, size=(1,1))
-# mlp = models.MLP(w1, b1, w2, b2, lr)
-#
-# #Train
-# steps = 100*y_train.size
-# mlp.train(X_train, y_train, steps)
+mlp = models.MLP(w1, b1, w2, b2, lr)
+
+#Train
+steps = 100*y_train.size
+mlp.train(X_train, y_train, steps)
 
 #Check weights (For grading)
 # mlp.w1
@@ -106,8 +106,8 @@ def evaluate(solutions, real):
 	labels = np.array(real)
 	return (predictions == labels).sum() / float(labels.size)
 
-# solutions = mlp.predict(X_test)
-# print(f"MLP acc: {evaluate(solutions, y_test)*100.0}%\n")
+solutions = mlp.predict(X_test)
+print(f"MLP acc: {evaluate(solutions, y_test)*100.0}%\n")
 
 
 #Initialization
