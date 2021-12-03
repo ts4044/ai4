@@ -60,36 +60,36 @@ class FCLayer:
         self.lr = lr
         self.w = w  # Each column represents all the weights going into an output node
         self.b = b
-        self.stored_output = None
+        self.stored_input = None
 
     def forward(self, input):
         # Write forward pass here
         ouput = np.dot(input, self.w) + self.b
-        self.stored_output = ouput
+        self.stored_input = input
         return ouput
 
     def backward(self, gradients):
         # Write backward pass here
-        layer_output = self.stored_output
-        activation = np.dot(self.w, gradients[0])
-        self.w -= self.lr * np.dot(layer_output, gradients[0])
-        return activation
+        x_dash = np.dot(gradients, np.transpose(self.w))
+        w_dash = np.dot(np.transpose(self.stored_input), gradients)
+        self.w = self.w - (self.lr * w_dash)
+        return x_dash
 
 
 class Sigmoid:
 
     def __init__(self):
-        self.stored_output = None
+        self.stored_sigmoid = None
 
     def forward(self, input):
         # Write forward pass here
         sigmoid = 1 / (1 + np.exp(-input))
-        self.stored_output = sigmoid
+        self.stored_sigmoid = sigmoid
         return sigmoid
 
     def backward(self, gradients):
         # Write backward pass here
-        sigmoid = self.stored_output
+        sigmoid = self.stored_sigmoid
         derivative = gradients * (sigmoid * (1 - sigmoid))
         return derivative
 
@@ -138,11 +138,20 @@ class K_MEANS:
                 cluster_ids.append(np.argmin(distances))
 
             # Once the clusters are formed, calculate the new centroid by calculating the mean and update
+            centroid_changed = False
             for i in range(self.k):
                 cluster_members_indexes: list = [j for j in range(X.shape[0]) if cluster_ids[j] == i]
                 cluster_members: numpy.ndarray = X[cluster_members_indexes]
                 new_centroid: list = self.mean(cluster_members)
-                centroids[i] = new_centroid
+
+                for k in range(len(new_centroid)):
+                    if new_centroid[k] != centroids[i][k]:
+                        centroids[i] = new_centroid
+                        centroid_changed = True
+                        break
+
+            if not centroid_changed:
+                break
 
         return np.array(cluster_ids)
 
@@ -192,13 +201,18 @@ class AGNES:
                         cluster_to_add = j
 
             # Form single link - since we update the links at every merge, when merging two clusters, the least distance
-            # is always considered
-            for i in range(len(clusters[cluster_to_add])):
+            # is always considered. First update the row of cluster_to_add, then update the column of cluster_to_add
+            for i in range(cluster_to_add, len(clusters[cluster_to_add])):
                 if distance_matrix[cluster_to_add][i] < distance_matrix[cluster_to_add_to][i]:
                     distance_matrix[cluster_to_add_to][i] = distance_matrix[cluster_to_add][i]
+                # Set the distance matrix row of the cluster we merged already to inf to avoid duplicates
+                distance_matrix[cluster_to_add][i] = float('inf')
 
-            # Set the distance matrix of the row we already added to another row as infinity to avoid duplication
-            distance_matrix[cluster_to_add] = [float('inf') for _ in distance_matrix[cluster_to_add]]
+            for i in range(cluster_to_add):
+                if distance_matrix[i][cluster_to_add] < distance_matrix[i][cluster_to_add_to]:
+                    distance_matrix[i][cluster_to_add_to] = distance_matrix[i][cluster_to_add]
+                # Set the distance matrix column of the cluster we merged already to inf to avoid duplicates
+                distance_matrix[i][cluster_to_add] = float('inf')
 
             # Merge the clusters
             clusters[cluster_to_add_to].extend(clusters[cluster_to_add])

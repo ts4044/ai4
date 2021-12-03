@@ -107,7 +107,7 @@ def evaluate(solutions, real):
 	return (predictions == labels).sum() / float(labels.size)
 
 solutions = mlp.predict(X_test)
-print(f"MLP acc: {evaluate(solutions, y_test)*100.0}%\n")
+print(f"MLP acc: {evaluate(solutions, y_test)*100.0}%")
 
 
 #Initialization
@@ -118,7 +118,6 @@ k_means = models.K_MEANS(k, t)
 
 #train
 KM_cluster = k_means.train(X)
-
 #evaluate
 print(f"K-Means silhouette: {silhouette(X, KM_cluster)*100.0}%")
 
