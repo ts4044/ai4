@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import assignment4 as models
 import numpy as np
 import sys
@@ -90,8 +92,9 @@ mlp = models.MLP(w1, b1, w2, b2, lr)
 
 #Train
 steps = 100*y_train.size
+start_time = datetime.now()
 mlp.train(X_train, y_train, steps)
-
+print("MLP trained in ", datetime.now()-start_time)
 #Check weights (For grading)
 # mlp.w1
 # mlp.b1
@@ -117,7 +120,9 @@ t = 50 #max iterations
 k_means = models.K_MEANS(k, t)
 
 #train
+start_time = datetime.now()
 KM_cluster = k_means.train(X)
+print("K-Means trained in ", datetime.now()-start_time)
 #evaluate
 print(f"K-Means silhouette: {silhouette(X, KM_cluster)*100.0}%")
 
@@ -127,7 +132,9 @@ k = 3
 agnes = models.AGNES(k)
 
 #train
+start_time = datetime.now()
 AG_cluster = agnes.train(X)
+print("AGNES trained in ", datetime.now()-start_time)
 
 #evaluate
 print(f"AGNES silhouette: {silhouette(X, AG_cluster)*100.0}%")

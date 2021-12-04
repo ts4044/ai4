@@ -73,6 +73,7 @@ class FCLayer:
         x_dash = np.dot(gradients, np.transpose(self.w))
         w_dash = np.dot(np.transpose(self.stored_input), gradients)
         self.w = self.w - (self.lr * w_dash)
+        self.b = self.b - (self.lr * gradients)
         return x_dash
 
 
@@ -131,7 +132,7 @@ class K_MEANS:
             # At every iteration, we are forming the cluster ids again, hence re-initialize
             cluster_ids = []
 
-            # For each datapoint, calculate what cluster they belong to  by taking least distance centroid
+            # For each datapoint, calculate what cluster they belong to by taking least distance centroid
             for i in range(X.shape[0]):
                 index: int = i
                 distances: list = self.distance(centroids, X[index])
@@ -177,52 +178,50 @@ class AGNES:
         # input is array of features (no labels)
 
         # Initially, each datapoint is in it's own cluster
-        clusters = [[i] for i in range(X.shape[0])]
+        clusters = [i for i in range(X.shape[0])]
 
-        # Calculate the bottom half of distance matrix since the distance is undirected, infinity for everything else
-        distance_matrix = [[self.distance(X[i], X[j]) if j < i else float('inf') for j in range(X.shape[0])] for i in
-                           range(X.shape[0])]
+        # This is used to track the number of clusters
+        num_clusters = X.shape[0]
 
-        # Do while the number of clusters is not k. The number of clusters reduces at each step due to merge
-        while len(clusters) != self.k:
-            minimum = float('inf')
-            cluster_to_add = -1
-            cluster_to_add_to = -1
+        # Calculate the distances between each pair of datapoints
+        pairs = []
+        distances = []
+        for i in range(X.shape[0]):
+            for j in range(i):
+                # If the indexes are same, skip - since the distance will be 0 anyway
+                if i == j:
+                    continue
+                # The key represents the pair of points
+                # Since i > j always, this is like calculating only the bottom half of the distance matrix
+                # The greater index of the two points always forms the x in the x,y pair
+                pairs.append(str(i) + "," + str(j))
+                distances.append(self.distance(X[i], X[j]))
 
-            # Find least value in the distance matrix
-            # clusters[i][0] gives the index of the first element in the cluster - using which I track the distances in
-            # matrix. This is because my matrix is in the bottom triangle, j<i, so I add an element to the cluster
-            # of an element with larger index always.
-            for i in range(len(clusters)):
-                for j in range(i):
-                    if distance_matrix[clusters[i][0]][clusters[j][0]] < minimum:
-                        minimum = distance_matrix[clusters[i][0]][clusters[j][0]]
-                        cluster_to_add_to = i
-                        cluster_to_add = j
+        # Sort the distances in ascending order - get the index
+        sorted_distances = np.argsort(distances)
+        # Pointer to go through the sorted_distances
+        pointer = 0
 
-            # Form single link - since we update the links at every merge, when merging two clusters, the least distance
-            # is always considered. First update the row of cluster_to_add, then update the column of cluster_to_add
-            for i in range(cluster_to_add, len(clusters[cluster_to_add])):
-                if distance_matrix[cluster_to_add][i] < distance_matrix[cluster_to_add_to][i]:
-                    distance_matrix[cluster_to_add_to][i] = distance_matrix[cluster_to_add][i]
-                # Set the distance matrix row of the cluster we merged already to inf to avoid duplicates
-                distance_matrix[cluster_to_add][i] = float('inf')
+        # Do while the number of clusters is not k
+        # The number of clusters reduces by 1 at each step where we merge clusters.
+        while num_clusters != self.k:
+            # Get the minimum distance from the sorted list
+            # This points to the corresponding index of the pair of datapoints in pairs array
+            index = sorted_distances[pointer]
+            pointer += 1
 
-            for i in range(cluster_to_add):
-                if distance_matrix[i][cluster_to_add] < distance_matrix[i][cluster_to_add_to]:
-                    distance_matrix[i][cluster_to_add_to] = distance_matrix[i][cluster_to_add]
-                # Set the distance matrix column of the cluster we merged already to inf to avoid duplicates
-                distance_matrix[i][cluster_to_add] = float('inf')
+            # The pop returns a tuple of ("x,y", distance) where "x,y" is the datapoint pair, and their distance
+            pair = pairs[index]
+            datapoints = pair.split(",")
 
-            # Merge the clusters
-            clusters[cluster_to_add_to].extend(clusters[cluster_to_add])
-            clusters.pop(cluster_to_add)
+            cluster_1 = clusters[int(datapoints[0])]
+            cluster_2 = clusters[int(datapoints[1])]
 
-        # For every element within a cluster, set the corresponding cluster id in a list
-        result = np.zeros(X.shape[0])
-        for cluster_id, cluster in enumerate(clusters):
-            for i in range(len(cluster)):
-                result[cluster[i]] = cluster_id
+            if cluster_1 != cluster_2:
+                for i, cluster_id in enumerate(clusters):
+                    if cluster_id == cluster_2:
+                        clusters[i] = cluster_1
+                num_clusters -= 1
 
-        return result
+        return np.array(clusters)
 # return array with cluster id corresponding to each item in dataset
