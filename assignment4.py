@@ -1,6 +1,4 @@
 import random
-
-import numpy
 import numpy as np
 
 
@@ -64,9 +62,9 @@ class FCLayer:
 
     def forward(self, input):
         # Write forward pass here
-        ouput = np.dot(input, self.w) + self.b
+        output = np.dot(input, self.w) + self.b
         self.stored_input = input
-        return ouput
+        return output
 
     def backward(self, gradients):
         # Write backward pass here
@@ -109,43 +107,36 @@ class K_MEANS:
         diffs = (centroids - datapoint) ** 2
         return np.sqrt(diffs.sum(axis=1))
 
-    # This function takes a cluster, and finds a new mean by finding mean of each column
-    def mean(self, cluster):
-        new_centroid: list = []
-        for i in range(cluster.shape[1]):
-            column_values: list = cluster[:, i]
-            new_centroid.append(np.mean(column_values))
-        return new_centroid
-
     def train(self, X):
         # training logic here
         # input is array of features (no labels)
 
         # Finding k random centroids using the input data
-        random_indexes: list = random.sample(list(range(X.shape[1])), self.k)
-        centroids: numpy.ndarray = np.array(X[random_indexes])
+        random_indexes = random.sample(range(X.shape[0]), self.k)
+        centroids = np.array(X[random_indexes])
 
         # Updating the k random centroids for t number of iterations
         # Stores the id of the cluster to which the corresponding data point belongs to
-        cluster_ids: list = []
+        cluster_ids = []
         for _ in range(self.t):
             # At every iteration, we are forming the cluster ids again, hence re-initialize
             cluster_ids = []
 
             # For each datapoint, calculate what cluster they belong to by taking least distance centroid
             for i in range(X.shape[0]):
-                index: int = i
-                distances: list = self.distance(centroids, X[index])
+                index = i
+                distances = self.distance(centroids, X[index])
                 cluster_ids.append(np.argmin(distances))
 
             # Once the clusters are formed, calculate the new centroid by calculating the mean and update
             centroid_changed = False
             for i in range(self.k):
-                cluster_members_indexes: list = [j for j in range(X.shape[0]) if cluster_ids[j] == i]
-                cluster_members: numpy.ndarray = X[cluster_members_indexes]
-                new_centroid: list = self.mean(cluster_members)
+                cluster_members_indexes = [j for j in range(X.shape[0]) if cluster_ids[j] == i]
+                cluster_members = X[cluster_members_indexes]
 
-                for k in range(len(new_centroid)):
+                new_centroid = np.mean(cluster_members, axis=0)
+
+                for k in range(new_centroid.shape[0]):
                     if new_centroid[k] != centroids[i][k]:
                         centroids[i] = new_centroid
                         centroid_changed = True
@@ -154,10 +145,8 @@ class K_MEANS:
             if not centroid_changed:
                 break
 
+        # Return array with cluster id corresponding to each item in dataset
         return np.array(cluster_ids)
-
-
-# return array with cluster id corresponding to each item in dataset
 
 
 class AGNES:
@@ -178,7 +167,7 @@ class AGNES:
         # input is array of features (no labels)
 
         # Initially, each datapoint is in it's own cluster
-        clusters = [i for i in range(X.shape[0])]
+        cluster_id = [i for i in range(X.shape[0])]
 
         # This is used to track the number of clusters
         num_clusters = X.shape[0]
@@ -214,14 +203,16 @@ class AGNES:
             pair = pairs[index]
             datapoints = pair.split(",")
 
-            cluster_1 = clusters[int(datapoints[0])]
-            cluster_2 = clusters[int(datapoints[1])]
+            # Cluster_1 holds the cluster id to which we are adding Cluster_2 to
+            cluster_1 = cluster_id[int(datapoints[0])]
+            cluster_2 = cluster_id[int(datapoints[1])]
 
+            # Update the cluster id for all the datapoints belonging to cluster_2
             if cluster_1 != cluster_2:
-                for i, cluster_id in enumerate(clusters):
-                    if cluster_id == cluster_2:
-                        clusters[i] = cluster_1
+                for i, cid in enumerate(cluster_id):
+                    if cid == cluster_2:
+                        cluster_id[i] = cluster_1
                 num_clusters -= 1
 
-        return np.array(clusters)
-# return array with cluster id corresponding to each item in dataset
+        # Return array with cluster id corresponding to each item in dataset
+        return np.array(cluster_id)
